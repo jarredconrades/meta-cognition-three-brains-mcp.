@@ -21,10 +21,10 @@ from starlette.routing import Route
 PROJECT = os.environ.get("SUPABASE_URL", "").rstrip("/")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 DB_PASSWORD = os.environ.get("DATABASE_PASSWORD", "")
-if not re.fullmatch(r"https://[a-z0-9]{20}\\.supabase\\.co", PROJECT):
+if not re.fullmatch(r"https://[a-z0-9]{20}\.supabase\.co", PROJECT):
     raise RuntimeError("SUPABASE_URL must be the canonical project origin")
 dburl = urlparse(DATABASE_URL)
-if dburl.scheme not in ("postgres", "postgresql") or not re.fullmatch(r"mc_runtime(?:\\.[a-z0-9]+)?", dburl.username or ""):
+if dburl.scheme not in ("postgres", "postgresql") or not re.fullmatch(r"mc_runtime(?:\.[a-z0-9]+)?", dburl.username or ""):
     raise RuntimeError("DATABASE_URL must use the existing restricted mc_runtime role")
 if not (DB_PASSWORD or dburl.password):
     raise RuntimeError("DATABASE_PASSWORD or URL password required")
@@ -92,7 +92,7 @@ async def query_memory(request, name, args):
                 return [dict(r) for r in rows]
             if name == "memory_adaptive_snapshot":
                 document = await conn.fetchval("select document from mc.automation_state where workspace_id=$1", UUID(workspace))
-                return (document or {}).get("business", {}).get("adaptive_user_business_memory")
+                return (json.loads(document) if isinstance(document, str) else (document or {})).get("business", {}).get("adaptive_user_business_memory")
             raise ValueError("Unknown tool")
 
 async def mcp(request):
