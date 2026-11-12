@@ -19,8 +19,9 @@ if urlsplit(UPSTREAM).path or urlsplit(UPSTREAM).query or urlsplit(UPSTREAM).fra
     raise RuntimeError("META_COGNITION_UPSTREAM must be an origin, not an endpoint")
 
 ALLOWED_PATHS = {
-    "/mcp", "/.well-known/oauth-protected-resource",
+    "/mcp", "/mcp/oauth", "/.well-known/oauth-protected-resource",
     "/.well-known/oauth-protected-resource/mcp",
+    "/.well-known/oauth-protected-resource/mcp/oauth",
     "/.well-known/oauth-authorization-server",
     "/oauth/register", "/oauth/authorize", "/oauth/token",
 }
@@ -50,8 +51,8 @@ async def forward(request: Request):
     async with httpx.AsyncClient(timeout=httpx.Timeout(30, read=90), follow_redirects=False) as client:
         try:
             upstream = await client.request(
-                request.method, UPSTREAM + path,
-                params=request.query_params, headers=headers, content=body,
+                request.method, httpx.URL(UPSTREAM + path).copy_with(query=request.scope["query_string"]),
+                headers=headers, content=body,
             )
         except httpx.HTTPError:
             return JSONResponse({"error": "Upstream unavailable"}, status_code=502)
